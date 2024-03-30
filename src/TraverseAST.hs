@@ -12,7 +12,7 @@ import GHC.Prelude
 
 import Data.Data hiding (Fixity)
 import GHC.Data.Bag
-import GHC.Types.Basic
+import GHC.Types.Basic ( SourceText )
 import GHC.Data.FastString
 import GHC.Types.Name.Set
 import GHC.Types.Name
