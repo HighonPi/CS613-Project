@@ -13,6 +13,10 @@ a = True
 x = 1
 y = 2
 z = x
+
+
+r = 1 + (2 * 3)
+
 namedValueDemo = 1 - y
 
 arithmeticDemo = 1 + 2 * 3
@@ -40,3 +44,11 @@ test :: Integer -> String
 test _ = "some string"
 
 applyTest = test 4
+
+f :: Bool -> Bool -> Bool
+f x y = not x && y
+
+double :: Num a => a -> a
+double x = x + x
+
+doubleTest = double 1

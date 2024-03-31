@@ -34,7 +34,6 @@ dependencies:
 - ghc-lib-parser
 - ghc-paths
 - optparse-applicative
-- optparse-generic
 - hspec
 
 library:

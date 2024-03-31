@@ -2,7 +2,7 @@ module OriginalCoreAST.CoreStepperHelpers.CoreLookup(tryFindBinding, findMatchin
 where
 
 import OriginalCoreAST.CoreTypeClassInstances ()
-import Data.Maybe
+import Data.Maybe ()
 import GHC.Core (Bind (NonRec, Rec), Expr (..), Alt, AltCon (..), CoreBind, collectArgs)
 import GHC.Types.Literal
   ( Literal (LitChar, LitDouble, LitFloat, LitNumber, LitString), mkLitInt64, mkLitString

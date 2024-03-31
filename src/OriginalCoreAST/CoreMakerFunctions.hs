@@ -12,7 +12,7 @@ import GHC.Types.Id.Info ( vanillaIdInfo, IdDetails(..))
 import GHC.Types.Name.Occurrence (mkOccName, mkVarOcc)
 
 integerToCoreLiteral :: Integer -> Literal
-integerToCoreLiteral value = mkLitInt64 value
+integerToCoreLiteral = mkLitInt64
 
 fractionalToCoreLiteral :: Real a => a -> Literal
 fractionalToCoreLiteral value = (LitDouble (toRational value))

@@ -11,12 +11,12 @@ import OriginalCoreAST.CoreMakerFunctions(fractionalToCoreLiteral, integerToCore
 import OriginalCoreAST.CoreInformationExtractorFunctions(varExpressionToString, varToString, nameToString, coreLiteralToFractional, isInHeadNormalForm, isTypeInformation, canBeReduced)
 
 
-evaluateFunctionWithArguments :: Expr Var -> [Expr Var] -> Maybe (Expr Var) 
+evaluateFunctionWithArguments :: Expr Var -> [Expr Var] -> Maybe (Expr Var)
 evaluateFunctionWithArguments (Var functionOrOperatorName) arguments = do
     evaluateUnsteppableFunctionWithArguments (varToString functionOrOperatorName) (filter (not.isTypeInformation) arguments) --Precondition: function must be in the form of "var". This is already checked by the function which is calling this function.
 evaluateFunctionWithArguments _ _ = error "function-expression has to be a 'Var'"
 
-evaluateUnsteppableFunctionWithArguments :: String -> [Expr Var] -> Maybe (Expr Var) 
+evaluateUnsteppableFunctionWithArguments :: String -> [Expr Var] -> Maybe (Expr Var)
 evaluateUnsteppableFunctionWithArguments "+" [x, y] = Just ((+) x y)
 evaluateUnsteppableFunctionWithArguments "-" [x, y] = Just ((-) x y)
 evaluateUnsteppableFunctionWithArguments "*" [x, y] = Just ((*) x y)
@@ -30,7 +30,7 @@ evaluateUnsteppableFunctionWithArguments "<" [x, y] = Just (boolToCoreExpression
 evaluateUnsteppableFunctionWithArguments ">" [x, y] = Just (boolToCoreExpression ((>) x y))
 evaluateUnsteppableFunctionWithArguments ">=" [x, y] = Just (boolToCoreExpression ((>=) x y))
 evaluateUnsteppableFunctionWithArguments "<=" [x, y] = Just (boolToCoreExpression ((<=) x y))
-evaluateUnsteppableFunctionWithArguments "negate" [(Lit (LitNumber _ x))] = Just (integerToCoreExpression (negate x)) --example of an arbitrary function from the prelude. note how the arguments must have the right type and the result is converted back into an expression
+evaluateUnsteppableFunctionWithArguments "negate" [Lit (LitNumber _ x)] = Just (integerToCoreExpression (negate x)) --example of an arbitrary function from the prelude. note how the arguments must have the right type and the result is converted back into an expression
 evaluateUnsteppableFunctionWithArguments "unpackCString#" [x] = Just x
 evaluateUnsteppableFunctionWithArguments name _ = Nothing --function not supported
 --toDo: Implement more operators and functions
