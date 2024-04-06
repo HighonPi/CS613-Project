@@ -68,7 +68,11 @@ applyStepToNestedApp bindings expr = do
                                 return (description, convertFunctionApplicationWithArgumentListToNestedFunctionApplication function simplifiedArguments)
                             else do
                                 appliedFunction <- evaluateFunctionWithArguments function arguments --all arguments are reduced, eval function. This is stric behaviour! We have to use strict behaviour here because we are trying to evaluate a function whose definition we do not know. therefor we cannot apply the arguments one after another but have to simplify all arguments before calling the function 
-                                return ("Apply " ++ (showOutputable function), appliedFunction)
+                                if (functionIsUnpackingCString function)
+                                    then do
+                                       return ("unpackCString#", appliedFunction)
+                                    else do 
+                                        return ("Apply " ++ (showOutputable function), appliedFunction)
                         else do
                             (description, reducedFunction) <- applyStep bindings (App function (head arguments))
                             return (description, convertFunctionApplicationWithArgumentListToNestedFunctionApplication reducedFunction (tail arguments))
@@ -84,4 +88,5 @@ applyStepToOneOfTheArguments bindings alreadyReducedArguments (x:xs) = if canBeR
                                                                         else applyStepToOneOfTheArguments bindings (alreadyReducedArguments ++ [x]) xs
 applyStepToOneOfTheArguments bindings alreadyReducedArguments [] = error "no reducable argument found" --no argument that can be reduced was found. this should not happen because this condition gets checked earlier in the code
 
-
+functionIsUnpackingCString :: Expr Var -> Bool
+functionIsUnpackingCString (Var functionName) = (==) (varToString functionName) "unpackCString#"

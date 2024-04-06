@@ -15,6 +15,8 @@ import OriginalCoreAST.CorePrettyPrinter(prettyPrint)
 type ReductionStepDescription = String --for example: "replace x with definition"
 type Binding = (Var, Expr Var)
 
+-- printing
+
 printCoreStepByStepReductionForEveryBinding :: [CoreBind] -> IO()
 printCoreStepByStepReductionForEveryBinding bindings = do
     let allBindings = convertToBindingsList bindings
@@ -22,10 +24,9 @@ printCoreStepByStepReductionForEveryBinding bindings = do
 
 printCoreStepByStepReductionForBinding :: [Binding] -> Binding -> IO ()
 printCoreStepByStepReductionForBinding bindings (var, exp) = do
-    putStr "\n**Reduction of "
+    putStr "\n**** Reduction of "
     putStr (varToString var)
-    putStr "**"
-    putStrLn ""
+    putStr " ****\n"
     prettyPrint exp
     printCoreStepByStepReductionForSingleExpression bindings exp
 
@@ -34,11 +35,14 @@ printCoreStepByStepReductionForSingleExpression bindings expression     | canBeR
                                                                             let reduction = (applyStep bindings expression)
                                                                             case reduction of
                                                                                 Just (reductionStepDescription, reducedExpression) -> do
-                                                                                    putStrLn ("\n{-" ++ reductionStepDescription ++ "-}")
-                                                                                    prettyPrint reducedExpression
+                                                                                    if ((/=) reductionStepDescription "unpackCString#") then do
+                                                                                        putStrLn ("\n-- " ++ reductionStepDescription)
+                                                                                        prettyPrint reducedExpression
+                                                                                    else
+                                                                                        return () -- do nothing, continue to the next statement
                                                                                     printCoreStepByStepReductionForSingleExpression bindings reducedExpression
-                                                                                Nothing -> putStrLn "\n{-no reduction rule implemented for this expression-}"
-                                                                        | otherwise = putStrLn "\n{-reduction complete-}"
+                                                                                Nothing -> putStrLn "\n-- No reduction rule implemented for this expression"
+                                                                        | otherwise = putStrLn "\n-- All reductions completed"
 
 
 convertToBindingsList :: [CoreBind] -> [Binding]

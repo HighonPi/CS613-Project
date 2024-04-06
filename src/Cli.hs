@@ -8,6 +8,7 @@
 
 module Cli (runCli, dispatch) where
 
+import Compiler (compileToCore, getCoreProgram, writeDump)
 import Options.Generic
   ( Generic,
     Modifiers (shortNameModifier),
@@ -22,11 +23,12 @@ import Options.Generic
     type (:::),
     type (<?>),
   )
+import OriginalCoreAST.CoreStepperPrinter
+  ( printCoreStepByStepReductionForEveryBinding,
+  )
+import Utils (listTopLevelFunctions, printCore)
 import Prelude hiding (FilePath)
 import qualified Prelude as P (FilePath)
-import Compiler (compileToCore, getCoreProgram, writeDump)
-import OriginalCoreAST.CoreStepperPrinter (printCoreStepByStepReductionForEveryBinding)
-import Utils (printCore, listTopLevelFunctions)
 
 type FilePath = P.FilePath <?> "The Haskell source file used as input to substep"
 
@@ -50,9 +52,9 @@ data SubStep w
   | List
       { path :: w ::: FilePath
       }
-  | Dump {
-    path :: w ::: FilePath
-  }
+  | Dump
+      { path :: w ::: FilePath
+      }
   deriving (Generic)
 
 instance ParseRecord (SubStep Wrapped) where

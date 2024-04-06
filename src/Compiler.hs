@@ -33,10 +33,13 @@ import GHC.Paths (libdir)
 import OriginalCoreAST.CoreStepperPrinter
   ( printCoreStepByStepReductionForEveryBinding,
   )
-import Utils (printAst, showOutputable, textAst, textOutputable)
 import System.Directory
-    ( createDirectory, doesDirectoryExist, removeDirectory )
-import System.FilePath (takeBaseName, joinPath)
+  ( createDirectory,
+    doesDirectoryExist,
+    removeDirectory,
+  )
+import System.FilePath (joinPath, takeBaseName)
+import Utils (printAst, showOutputable, textAst, textOutputable)
 
 data CompilationResult = CompilationResult
   { coreProgram :: CoreProgram,
@@ -90,15 +93,15 @@ compileToCore filePath = runGhc (Just libdir) $ do
   return $ CompilationResult coreAst debugInformation
 
 debugDirectoryPath :: String
-debugDirectoryPath = "debug"
+debugDirectoryPath = "dump"
 
 writeDump :: CompilationResult -> IO ()
 writeDump cr = do
-    debugDirExists <- doesDirectoryExist debugDirectoryPath
-    if debugDirExists
-        then do
-            removeDirectory debugDirectoryPath
-            createDirectory debugDirectoryPath
-        else do
-            createDirectory debugDirectoryPath
-    mapM_ (\(k, v) -> T.writeFile (joinPath [debugDirectoryPath, unpack k]) v) (toList (debugInfo cr))
+  debugDirExists <- doesDirectoryExist debugDirectoryPath
+  if debugDirExists
+    then do
+      removeDirectory debugDirectoryPath
+      createDirectory debugDirectoryPath
+    else do
+      createDirectory debugDirectoryPath
+  mapM_ (\(k, v) -> T.writeFile (joinPath [debugDirectoryPath, unpack k]) v) (toList (debugInfo cr))

@@ -95,3 +95,14 @@ instance Fractional Literal where
   (/) _ _ = error "/ not supported by this type"
   recip expression = 1 / expression
   fromRational x = (LitDouble x)
+
+instance Show Literal where
+  show (LitChar charValue) = show charValue
+  show (LitNumber _ integerValue) = show integerValue
+  show (LitString stringValue) = show stringValue
+  show (LitFloat floatValue) = show floatValue
+  show (LitDouble doubleValue) = show doubleValue
+  show (LitNullAddr) = "NULL"
+  show (LitRubbish) = "(LitRubbish)"
+  show (LitLabel fastString _ _) = "(LitLabel)"
+
