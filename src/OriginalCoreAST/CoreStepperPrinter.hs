@@ -1,20 +1,28 @@
-module OriginalCoreAST.CoreStepperPrinter
-  (printCoreStepByStepReductionForBinding, printCoreStepByStepReductionForEveryBinding
+module OriginalCoreAST.CoreStepperPrinter (
+    printCoreStepByStepReductionForBinding, printCoreStepByStepReductionForEveryBinding,
+    convertToBindingsList, printCoreStepByStepReductionForSingleExpression,
   )
 where
 
-import OriginalCoreAST.CoreInformationExtractorFunctions(varToString, canBeReduced)
-import OriginalCoreAST.CoreStepper(applyStep)
-import Data.Maybe
-import GHC.Core (Bind (NonRec, Rec), Expr (..), Alt, AltCon (..), CoreBind, collectArgs)
-import GHC.Types.Literal( Literal (LitChar, LitDouble, LitFloat, LitNumber, LitString), mkLitInt64, mkLitString)
-
-import GHC.Types.Var (Var (varName, varType), TyVar, Id, mkCoVar, mkGlobalVar)
-import OriginalCoreAST.CorePrettyPrinter(prettyPrint)
 import OriginalCoreAST.CoreStepperHelpers.CoreLookup(tryFindBindingForString)
-
-type ReductionStepDescription = String --for example: "replace x with definition"
-type Binding = (Var, Expr Var)
+import OriginalCoreAST.CoreStepperHelpers.CoreTransformator (convertFunctionApplicationWithArgumentListToNestedFunctionApplication, convertToMultiArgumentFunction)
+import OriginalCoreAST.CoreInformationExtractorFunctions(varToString, canBeReduced, canBeReducedToNormalForm, isTypeInformation)
+import OriginalCoreAST.CorePrettyPrinter(prettyPrint)
+import OriginalCoreAST.CoreStepper(applyStep, safeReduceToNormalForm)
+import OriginalCoreAST.CoreTypeDefinitions
+  ( Binding,
+    FunctionName,
+    ReductionStepDescription (..),
+    ReductionSuccessfulFlag (..),
+    StepResult,
+  )
+import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
+import GHC.Plugins
+  ( Bind (NonRec, Rec),
+    CoreBind,
+    CoreExpr,
+    Var (varName),
+  )
 
 -- printing
 
@@ -27,7 +35,7 @@ printCoreStepByStepReductionForEveryBinding functionToStep userBindings preludeB
     mapM_ (printCoreStepByStepReductionForBinding allBindings) bindingsToStep
     if null bindingsToStep
         then do
-            putStrLn "\nNo function is given to step into!"
+            putStrLn "\nNo (Valid) binding is given to step into!"
         else
             return ()
     where
@@ -46,10 +54,6 @@ printCoreStepByStepReductionForEveryBinding functionToStep userBindings preludeB
                     []
                 else
                     [fromJust response]
-                    
-        -- bindingToStep = tryFindBindingForString (fromJust functionToStep) allBindings
-
-maximumReductionLimit = 200
 
 printCoreStepByStepReductionForBinding :: [Binding] -> Binding -> IO ()
 printCoreStepByStepReductionForBinding bindings (var, exp) = do
@@ -57,50 +61,52 @@ printCoreStepByStepReductionForBinding bindings (var, exp) = do
     putStr (varToString var)
     putStr " ****\n"
     prettyPrint exp
-    printAllStepsUptoALimit maximumReductionLimit (getCoreStepByStepReductionForSingleExpression bindings exp)
-    -- printCoreStepByStepReductionForSingleExpression bindings exp
+    printCoreStepByStepReductionForSingleExpression bindings exp
 
--- printCoreStepByStepReductionForSingleExpression :: [Binding] -> Expr Var -> IO()
--- printCoreStepByStepReductionForSingleExpression bindings expression     | canBeReduced expression = do
---                                                                             let reduction = (applyStep bindings expression)
---                                                                             case reduction of
---                                                                                 Just (reductionStepDescription, reducedExpression) -> do
---                                                                                     if ((/=) reductionStepDescription "unpackCString#") then do
---                                                                                         putStrLn ("\n-- " ++ reductionStepDescription)
---                                                                                         prettyPrint reducedExpression
---                                                                                     else
---                                                                                         return () -- do nothing, continue to the next statement
---                                                                                     printCoreStepByStepReductionForSingleExpression bindings reducedExpression
---                                                                                 Nothing -> putStrLn "\n-- No reduction rule implemented for this expression"
---                                                                         | otherwise = putStrLn "\n-- All reductions completed"
+-- | Maximum number of reductions before it's inferred that an infinite loop is present
+maximumReductionLimit = 500
 
-getCoreStepByStepReductionForSingleExpression :: [Binding] -> Expr Var -> [(ReductionStepDescription, Maybe (Expr Var))]
-getCoreStepByStepReductionForSingleExpression bindings expression     | canBeReduced expression = do
-                                                                            let reduction = (applyStep bindings expression)
-                                                                            case reduction of
-                                                                                Just (reductionStepDescription, reducedExpression) -> do
-                                                                                    if ((/=) reductionStepDescription "unpackCString#")
-                                                                                    then
-                                                                                        (reductionStepDescription, Just reducedExpression) : (getCoreStepByStepReductionForSingleExpression bindings reducedExpression)
-                                                                                    else
-                                                                                        getCoreStepByStepReductionForSingleExpression bindings reducedExpression
-                                                                                Nothing -> [(noReductionsString, Nothing)]
-                                                                        | otherwise = []
+-- | Shows step-by-step reduction for a core expression 
+printCoreStepByStepReductionForSingleExpression :: [Binding] -> CoreExpr -> IO ()
+printCoreStepByStepReductionForSingleExpression bindings expression = do
+  let (stepResults, reductionSuccessfulFlag) = getAllSteps maximumReductionLimit bindings expression
+  printStepResultList stepResults reductionSuccessfulFlag
 
-printAllStepsUptoALimit:: Int -> [(ReductionStepDescription, Maybe (Expr Var))] -> IO ()
-printAllStepsUptoALimit _ [] = do
-    putStrLn ("\n---- " ++ reductionsCompletedString)
+-- | Prints the step-by-step reduction
+printStepResultList :: [StepResult] -> ReductionSuccessfulFlag -> IO ()
+printStepResultList [] Success = putStrLn "\n---- All reductions completed"
+printStepResultList [] NoReductionRule = putStrLn "\n---- Reduction chain completed: No reduction rule implemented for this expression"
+printStepResultList _ StoppedToPreventInfiniteLoop = putStrLn "\n---- Exceeded maximum number of reductions. Infinite loop inference"
+printStepResultList ((stepDescription, expression, _) : xs) successFlat = do
+    putStrLn ("\n---- " ++ show stepDescription)
+    prettyPrint expression
+    printStepResultList xs successFlat
 
-printAllStepsUptoALimit _ ((reductionDescp, Nothing): xs) = do
-    putStrLn ("\n---- " ++ reductionDescp)
-
-printAllStepsUptoALimit 0 _ = do
-    putStrLn ("\n---- " ++ maximumReductionsExceededString)
-
-printAllStepsUptoALimit limit ((reductionDescp, Just expressionToPrint): xs) = do
-    putStrLn ("\n---- " ++ reductionDescp)
-    prettyPrint expressionToPrint
-    printAllStepsUptoALimit (limit - 1) xs
+-- | Return a record of all sub-steps
+getAllSteps :: Integer -> [Binding] -> CoreExpr -> ([StepResult], ReductionSuccessfulFlag)
+getAllSteps 0 bindings expression = ([], StoppedToPreventInfiniteLoop)
+getAllSteps maximumAmountOfSteps bindings expression = do
+  if canBeReduced expression
+    then do
+      let maybeReduction = applyStep bindings expression
+      case maybeReduction of
+        Just (reductionStep, reducedExpression, newBindings) -> do
+          let (stepDescription, reductionSuccessfulFlat) = getAllSteps (maximumAmountOfSteps - 1) newBindings reducedExpression
+          ((reductionStep, reducedExpression, newBindings) : stepDescription, reductionSuccessfulFlat)
+        Nothing -> ([], NoReductionRule)
+    else do
+      --try to reduce even more (only for visualization)
+      if canBeReducedToNormalForm expression
+        then do
+          let (function, arguments) = convertToMultiArgumentFunction expression
+          let maybeArgumentsInNormalForm = map (safeReduceToNormalForm bindings) arguments
+          if any isNothing maybeArgumentsInNormalForm
+            then ([], NoReductionRule)
+            else do
+              let argumentsInNormalForm = map fromJust maybeArgumentsInNormalForm
+              let result = convertFunctionApplicationWithArgumentListToNestedFunctionApplication function argumentsInNormalForm
+              ([(ConstructorArgumentReductionForVisualization, result, [])], Success)
+        else ([], Success)
 
 convertToBindingsList :: [CoreBind] -> [Binding]
 convertToBindingsList bindings = concat (map convertCoreBindingToBindingList bindings)

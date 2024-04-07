@@ -1,4 +1,7 @@
-module OriginalCoreAST.CoreMakerFunctions(fractionalToCoreLiteral, integerToCoreLiteral, rationalToCoreExpression, integerToCoreExpression, stringToCoreExpression, boolToCoreExpression)
+module OriginalCoreAST.CoreMakerFunctions(
+    fractionalToCoreLiteral, integerToCoreLiteral, rationalToCoreExpression, integerToCoreExpression, stringToCoreExpression, boolToCoreExpression,
+    charToCoreExpression, 
+    )
 where
 
 import GHC.Core (Expr (..))
@@ -10,6 +13,7 @@ import GHC.Data.FastString (mkFastString)
 import GHC.Core.TyCo.Rep (Type(..), TyLit(..))
 import GHC.Types.Id.Info ( vanillaIdInfo, IdDetails(..))
 import GHC.Types.Name.Occurrence (mkOccName, mkVarOcc)
+import GHC.Plugins (CoreExpr, mkCharExpr)
 
 integerToCoreLiteral :: Integer -> Literal
 integerToCoreLiteral = mkLitInt64
@@ -29,3 +33,7 @@ stringToCoreExpression value = Lit (mkLitString value)
 boolToCoreExpression :: Bool -> Expr Var  --this is a hack, we just took the easiest constructors we found to create a "Var"-Instance without understanding what those constructors stand for 
 boolToCoreExpression True = Var (mkGlobalVar VanillaId (mkSystemName minLocalUnique (mkVarOcc ("True"))) (LitTy (StrTyLit (mkFastString "Bool"))) vanillaIdInfo)
 boolToCoreExpression False = Var (mkGlobalVar VanillaId (mkSystemName minLocalUnique (mkVarOcc ("False"))) (LitTy (StrTyLit (mkFastString "Bool"))) vanillaIdInfo)
+
+-- | creates a Core expression for a char value
+charToCoreExpression :: Char -> CoreExpr
+charToCoreExpression = mkCharExpr

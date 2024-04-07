@@ -5,7 +5,6 @@ module OriginalCoreAST.CoreInformationExtractorFunctions
         coreLiteralToFractional, 
         isInHeadNormalForm, 
         isTypeInformation, 
-        canBeReduced,
         convertToMultiArgumentLamda,
         getIndividualElementsOfList,
         getIndividualElementsOfTuple,
@@ -17,7 +16,12 @@ module OriginalCoreAST.CoreInformationExtractorFunctions
         removeTypeInformation,
         removeTypeVars,
         showOperatorWithoutBrackets,
-        varToSimpleString
+        varToSimpleString,
+        varNameEqualsString,
+        varsHaveTheSameName,
+        varsHaveTheSameType,
+        canBeReduced,
+        canBeReducedToNormalForm,
     )
 where
 
@@ -68,11 +72,34 @@ isTypeInformation (Type _) = True
 isTypeInformation (Var name) = "$" `isPrefixOf` (varToString name) || isTyVar name
 isTypeInformation x = False
 
--- | The "canBeReducedFunction" checks if a Core expression can be reduced.
+-- | checks if a Core expression is not yet in normal form and can further be reduced
+-- For better visualization
+canBeReducedToNormalForm :: CoreExpr -> Bool
+canBeReducedToNormalForm (App expr argument) = do
+  let (function, arguments) = collectArgs (App expr argument)
+  (any canBeReduced arguments || any canBeReducedToNormalForm arguments) || canBeReduced function || canBeReducedToNormalForm function
+canBeReducedToNormalForm expr = canBeReduced expr
+
+-- | Checks if a Core expression can be reduced further down to the HEAD Normal form
+canBeReduced :: CoreExpr -> Bool
 canBeReduced exp
-  | isTypeInformation exp = False
   | isBoolVar exp = False
-  | otherwise = not (exprIsHNF exp)
+  | isTypeInformation exp = False
+  | otherwise = case exp of
+    (App (Lam _ _) x) -> True
+    (App (Let _ _) x) -> True
+    (Case {}) -> True
+    (Cast _ _) -> True
+    (Let _ _) -> True
+    (App x y) -> canBeReduced (getFunctionOfNestedApplication (App x y)) || not (isInHeadNormalForm exp)
+    _ -> not (isInHeadNormalForm exp)
+  where
+    isInHeadNormalForm :: CoreExpr -> Bool
+    isInHeadNormalForm = exprIsHNF
+
+-- | extracts the left-most innermost function of a nested function application
+getFunctionOfNestedApplication :: Expr b -> Expr b
+getFunctionOfNestedApplication expr = fst (collectArgs expr)
 
 isBoolVar :: Expr Var -> Bool
 isBoolVar (Var x) = or [((==) (varToSimpleString x) "True"), ((==) (varToSimpleString x) "False")]
@@ -180,3 +207,12 @@ removeTypeVars list = filter (not . isTyVar) list
 showOperatorWithoutBrackets :: CoreExpr -> String
 showOperatorWithoutBrackets (Var var) = varToString var
 showOperatorWithoutBrackets _ = error "is not an operator"
+
+varNameEqualsString :: Var -> String -> Bool
+varNameEqualsString var name = (==) (varToString var) name
+
+varsHaveTheSameName :: Var -> Var -> Bool
+varsHaveTheSameName x y = (==) (varToString x) (varToString y)
+
+varsHaveTheSameType :: Var -> Var -> Bool
+varsHaveTheSameType x y = (==) (showOutputable (varType x)) (showOutputable (varType y))

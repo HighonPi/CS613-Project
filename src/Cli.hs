@@ -76,5 +76,11 @@ stepF fp fn = do
   cr <- compileToCore fp
   setCurrentDirectory (takeDirectory fp)
   let preludePath = "MiniPrelude.hs"
+  fileExists <- (doesFileExist preludePath)
+  if (not fileExists)
+    then do
+        error "Place MiniPrelude.hs in the same directory as your test program!"
+    else do
+        return()
   mpr <- compileToCore preludePath
   printCoreStepByStepReductionForEveryBinding fn (getCoreProgram cr) (getCoreProgram mpr)
