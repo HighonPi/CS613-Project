@@ -12,6 +12,7 @@ import OriginalCoreAST.CoreInformationExtractorFunctions(varExpressionToString, 
 
 
 evaluateFunctionWithArguments :: Expr Var -> [Expr Var] -> Maybe (Expr Var)
+-- evaluateFunctionWithArguments (Var functionOrOperatorName) _ = error ("called evaluateFunctionWithArguments for function: " ++ (varToString functionOrOperatorName))
 evaluateFunctionWithArguments (Var functionOrOperatorName) arguments = do
     evaluateUnsteppableFunctionWithArguments (varToString functionOrOperatorName) (filter (not.isTypeInformation) arguments) --Precondition: function must be in the form of "var". This is already checked by the function which is calling this function.
 evaluateFunctionWithArguments _ _ = error "function-expression has to be a 'Var'"
@@ -30,6 +31,10 @@ evaluateUnsteppableFunctionWithArguments "<" [x, y] = Just (boolToCoreExpression
 evaluateUnsteppableFunctionWithArguments ">" [x, y] = Just (boolToCoreExpression ((>) x y))
 evaluateUnsteppableFunctionWithArguments ">=" [x, y] = Just (boolToCoreExpression ((>=) x y))
 evaluateUnsteppableFunctionWithArguments "<=" [x, y] = Just (boolToCoreExpression ((<=) x y))
+evaluateUnsteppableFunctionWithArguments "min" [x, y] = Just (min x y)
+evaluateUnsteppableFunctionWithArguments "max" [x, y] = Just (max x y)
+evaluateUnsteppableFunctionWithArguments "succ" [x] = Just ((+) x 1)
+evaluateUnsteppableFunctionWithArguments "pred" [x] = Just ((-) x 1)
 evaluateUnsteppableFunctionWithArguments "negate" [Lit (LitNumber _ x)] = Just (integerToCoreExpression (negate x)) --example of an arbitrary function from the prelude. note how the arguments must have the right type and the result is converted back into an expression
 evaluateUnsteppableFunctionWithArguments "unpackCString#" [x] = Just x
 evaluateUnsteppableFunctionWithArguments name _ = Nothing --function not supported

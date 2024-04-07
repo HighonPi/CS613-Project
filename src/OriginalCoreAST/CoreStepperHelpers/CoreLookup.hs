@@ -1,4 +1,4 @@
-module OriginalCoreAST.CoreStepperHelpers.CoreLookup(tryFindBinding, findMatchingPattern)
+module OriginalCoreAST.CoreStepperHelpers.CoreLookup(tryFindBinding, findMatchingPattern, tryFindBindingForString)
 where
 
 import OriginalCoreAST.CoreTypeClassInstances ()
@@ -19,6 +19,13 @@ tryFindBinding key [] = Nothing
 tryFindBinding key ((var, exp):xs) = if ((==) (varToString var) (varToString key))
                                                     then Just (exp)
                                                     else tryFindBinding key xs
+
+-- | tries to find a binding inside the list of bindings for a given function name
+tryFindBindingForString :: String -> [Binding] -> Maybe Binding
+tryFindBindingForString functionName [] = Nothing
+tryFindBindingForString functionName ((var, exp):xs) = if ((==) (varToString var) functionName) 
+                                                                    then Just (var, exp)
+                                                                    else tryFindBindingForString functionName xs
 
 findMatchingPattern :: Expr Var -> [Alt Var] -> Maybe (Expr Var)
 findMatchingPattern expression [] = Nothing 

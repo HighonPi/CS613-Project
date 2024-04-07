@@ -58,8 +58,8 @@ compileToCore filePath = runGhc (Just libdir) $ do
   addTarget target
   res <- load LoadAllTargets
   case res of
-    Succeeded -> liftIO $ putStrLn "successfully loaded targets"
-    Failed -> liftIO $ putStrLn "failed to load targets"
+    Succeeded -> liftIO $ putStrLn "-- Note: successfully loaded targets"
+    Failed -> liftIO $ putStrLn "-- Note: failed to load targets"
 
   let modName = mkModuleName (takeBaseName filePath)
   modSum <- getModSummary modName

@@ -33,7 +33,8 @@ printCore coreAst = liftIO (putStrLn (showOutputable (pprCoreBindings coreAst)))
 listTopLevelFunctions :: CoreProgram -> IO ()
 listTopLevelFunctions cp = do
   let topLevelNames = map (takeWhile (/= ' ') . showOutputable . pprCoreBinding) cp
-  mapM_ putStrLn topLevelNames
+  putStr "\n---- List of Top Level Bindings ----\n"
+  mapM_ (\(i, name) -> putStrLn $ show i ++ ") " ++ name) $ zip [1..] topLevelNames
 
 splitList :: [a] -> ([a], [a])
 splitList myList = splitAt (((length myList) + 1) `div` 2) myList
