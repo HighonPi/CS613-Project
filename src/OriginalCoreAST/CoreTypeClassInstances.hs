@@ -1,9 +1,18 @@
+-- {-# LANGUAGE ImplicitParams, ConstraintKinds, UndecidableInstances #-}
+
 module OriginalCoreAST.CoreTypeClassInstances()
 where
+
+-- import GHC.Stack
 
 import GHC.Core (Expr (..))
 import GHC.Types.Literal(Literal (..))
 import OriginalCoreAST.CoreMakerFunctions(fractionalToCoreLiteral, integerToCoreLiteral, rationalToCoreExpression, integerToCoreExpression, stringToCoreExpression)
+
+import Utils (showOutputable)
+
+-- errorWithTrace:: HasCallStack => String -> Expr b
+-- errorWithTrace errmsg = error (errmsg ++ " " ++ show callStack)
 
 instance Num (Expr b) where
   (+) (Lit x) (Lit y) = Lit ((+) x y)

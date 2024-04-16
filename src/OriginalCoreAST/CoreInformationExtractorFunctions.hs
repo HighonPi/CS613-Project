@@ -22,6 +22,8 @@ module OriginalCoreAST.CoreInformationExtractorFunctions
         varsHaveTheSameType,
         canBeReduced,
         canBeReducedToNormalForm,
+
+        isTypeWrapperFunctionName,
     )
 where
 
@@ -216,3 +218,7 @@ varsHaveTheSameName x y = (==) (varToString x) (varToString y)
 
 varsHaveTheSameType :: Var -> Var -> Bool
 varsHaveTheSameType x y = (==) (showOutputable (varType x)) (showOutputable (varType y))
+
+-- | checks if a function name stands for a primitive type constructor like "I#" or "C#".
+isTypeWrapperFunctionName :: String -> Bool
+isTypeWrapperFunctionName name = "#" `isSuffixOf` name

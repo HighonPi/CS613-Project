@@ -7,7 +7,7 @@ module MiniPrelude (module MiniPrelude, module GHC.Maybe, module Data.Char, modu
 
 {-Imports-}
 
---import only "unsteppable functionality", provide the other functions
+-- Provide standard functions
 import Data.Char (isSpace, ord)
 import GHC.Maybe hiding (Maybe (..))
 import Prelude

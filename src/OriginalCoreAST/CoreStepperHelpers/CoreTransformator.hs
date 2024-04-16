@@ -1,4 +1,7 @@
-module OriginalCoreAST.CoreStepperHelpers.CoreTransformator(convertFunctionApplicationWithArgumentListToNestedFunctionApplication, deepReplaceVarWithinExpression, deepReplaceVarWithinAlternative, deepReplaceMultipleVarWithinExpression, convertToMultiArgumentFunction)
+module OriginalCoreAST.CoreStepperHelpers.CoreTransformator (
+    convertFunctionApplicationWithArgumentListToNestedFunctionApplication, deepReplaceVarWithinExpression, 
+    deepReplaceVarWithinAlternative, deepReplaceMultipleVarWithinExpression, convertToMultiArgumentFunction, prepareExpressionArgumentForEvaluation
+    )
 where
 
 import OriginalCoreAST.CoreTypeClassInstances ()
@@ -10,7 +13,7 @@ import GHC.Types.Literal
 import GHC.Types.Var (Var (varName, varType), TyVar, Id, mkCoVar, mkGlobalVar)
 
 import OriginalCoreAST.CoreMakerFunctions(fractionalToCoreLiteral, integerToCoreLiteral, rationalToCoreExpression, integerToCoreExpression, stringToCoreExpression, boolToCoreExpression)
-import OriginalCoreAST.CoreInformationExtractorFunctions(varExpressionToString, varToString, nameToString, coreLiteralToFractional, isInHeadNormalForm, isTypeInformation, canBeReduced)
+import OriginalCoreAST.CoreInformationExtractorFunctions(varExpressionToString, varToString, nameToString, coreLiteralToFractional, isInHeadNormalForm, isTypeInformation, canBeReduced, isTypeWrapperFunctionName)
 
 import GHC.Plugins (CoreExpr)
 
@@ -53,3 +56,10 @@ deepReplaceMultipleVarWithinExpression (x:xs) (y:ys) expression = deepReplaceMul
 convertToMultiArgumentFunction :: Expr Var -> (Expr Var, [Expr Var])
 convertToMultiArgumentFunction expr = collectArgs expr
 
+-- | Unwrapps the argument from a type wrapper if necessary
+prepareExpressionArgumentForEvaluation :: CoreExpr -> CoreExpr
+prepareExpressionArgumentForEvaluation (App (Var id) arg) =
+  if isTypeWrapperFunctionName (varToString id)
+    then arg
+    else App (Var id) arg
+prepareExpressionArgumentForEvaluation x = x

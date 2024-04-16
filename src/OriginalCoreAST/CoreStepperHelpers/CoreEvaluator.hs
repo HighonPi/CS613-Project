@@ -8,11 +8,12 @@ import GHC.Types.Var (Var)
 
 import OriginalCoreAST.CoreMakerFunctions(rationalToCoreExpression, integerToCoreExpression, boolToCoreExpression)
 import OriginalCoreAST.CoreInformationExtractorFunctions(varToString, removeTypeInformation)
+import OriginalCoreAST.CoreStepperHelpers.CoreTransformator(prepareExpressionArgumentForEvaluation)
 import OriginalCoreAST.CoreTypeClassInstances()
 import OriginalCoreAST.CoreTypeDefinitions (Argument, FunctionName, FunctionReference, Reducer)
 import Data.Maybe (fromJust, isJust, isNothing)
 import GHC.Plugins (CoreExpr, Expr (Lit, Type))
-import Utils ()
+import Utils (showOutputable)
 
 -- | Evaluate unsteppable reductions
 --  This function is used for resolving functions that are unsteppable (for example the + operator)
@@ -22,11 +23,14 @@ evaluateFunctionWithArguments functionOrOperatorName arguments reducer = do
     then 
         Nothing -- cannot reduce argument of unsteppable function
     else
+        -- error ("For function: " ++ (varToString functionOrOperatorName) ++ " evaluated result: " ++ (showOutputable evaluationResults))
         evaluationResults
   where
-    evaluationResults = evaluateUnsteppableFunctionWithArguments (varToString functionOrOperatorName) (removeTypeInformation reducedArguments) reducer
-    reducedMaybeArguments = map reducer arguments
+    argumentsWithoutApplications = map prepareExpressionArgumentForEvaluation arguments
+    reducedMaybeArguments = map reducer argumentsWithoutApplications
     reducedArguments = map fromJust reducedMaybeArguments
+
+    evaluationResults = evaluateUnsteppableFunctionWithArguments (varToString functionOrOperatorName) (removeTypeInformation reducedArguments) reducer
 
     evaluateUnsteppableFunctionWithArguments :: FunctionName -> [Argument] -> Reducer -> Maybe CoreExpr
     evaluateUnsteppableFunctionWithArguments "+" [x, y] _ = Just ((+) x y)

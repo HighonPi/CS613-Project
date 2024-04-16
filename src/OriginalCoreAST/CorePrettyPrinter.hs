@@ -1,4 +1,4 @@
-module OriginalCoreAST.CorePrettyPrinter(prettyPrint)
+module OriginalCoreAST.CorePrettyPrinter(prettyPrint, toHaskellLikeString)
 where
 
 import OriginalCoreAST.CoreStepperHelpers.CoreTransformator

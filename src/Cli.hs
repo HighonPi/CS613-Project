@@ -29,8 +29,9 @@ import OriginalCoreAST.CoreStepperPrinter
 import Utils (listTopLevelFunctions, printCore)
 import Prelude hiding (FilePath)
 import qualified Prelude as P (FilePath)
-import System.FilePath (takeDirectory, combine, takeFileName)
+import System.FilePath (takeDirectory, combine, takeFileName, joinPath)
 import System.Directory ( setCurrentDirectory, doesFileExist )
+import System.Environment (withArgs)
 
 type FilePath = P.FilePath <?> "The Haskell source file used as input to the tool"
 
@@ -42,7 +43,8 @@ toolDescription = "A Tool for Visualizing Reductions in Haskell"
 data InputCommand w
   = Step
       { path :: w ::: FilePath,
-        function :: w ::: FunctionName
+        function :: w ::: FunctionName,
+        verbose :: w ::: Bool <?> "Enable verbose output if set"
       }
   | List
       { path :: w ::: FilePath
@@ -59,11 +61,14 @@ modifiers = defaultModifiers {shortNameModifier = firstLetter}
 
 type Invocation = InputCommand Unwrapped
 
-runCli :: IO Invocation
-runCli = unwrapRecord toolDescription
+-- runCli :: IO Invocation
+-- runCli = unwrapRecord toolDescription
+
+runCli :: String -> IO Invocation
+runCli input = withArgs (words input) $ unwrapRecord toolDescription
 
 dispatch :: Invocation -> IO ()
-dispatch (Step p f) = stepF p f
+dispatch (Step p f v) = stepF p f v
 dispatch (List p) = listF p
 
 listF :: [Char] -> IO ()
@@ -71,11 +76,10 @@ listF fp = do
   cr <- compileToCore fp
   listTopLevelFunctions $ getCoreProgram cr
 
-stepF :: [Char] -> Maybe [Char] -> IO ()
-stepF fp fn = do
+stepF :: [Char] -> Maybe [Char] -> Bool -> IO ()
+stepF fp fn isVerbose = do
   cr <- compileToCore fp
-  setCurrentDirectory (takeDirectory fp)
-  let preludePath = "MiniPrelude.hs"
+  let preludePath = joinPath [(takeDirectory fp), "MiniPrelude.hs"] 
   fileExists <- (doesFileExist preludePath)
   if (not fileExists)
     then do
@@ -83,4 +87,4 @@ stepF fp fn = do
     else do
         return()
   mpr <- compileToCore preludePath
-  printCoreStepByStepReductionForEveryBinding fn (getCoreProgram cr) (getCoreProgram mpr)
+  printCoreStepByStepReductionForEveryBinding isVerbose fn (getCoreProgram cr) (getCoreProgram mpr)
