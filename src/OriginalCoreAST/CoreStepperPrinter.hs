@@ -74,9 +74,9 @@ printCoreStepByStepReductionForSingleExpression isVerbose bindings expression = 
 
 -- | Prints the step-by-step reduction
 printStepResultList :: Bool -> [StepResult] -> ReductionSuccessfulFlag -> IO ()
-printStepResultList _ [] Success = putStrLn "\n---- All reductions completed"
-printStepResultList _ [] NoReductionRule = putStrLn "\n---- Reduction chain completed: No reduction rule implemented for this expression"
-printStepResultList _ _ StoppedToPreventInfiniteLoop = putStrLn "\n---- Exceeded maximum number of reductions. Infinite loop inference"
+printStepResultList _ [] Success = putStrLn "\n---- All reductions completed\n"
+printStepResultList _ [] NoReductionRule = putStrLn "\n---- Reduction chain completed: No reduction rule implemented for this expression\n"
+printStepResultList _ _ StoppedToPreventInfiniteLoop = putStrLn "\n---- Exceeded maximum number of reductions. Infinite loop inference\n"
 printStepResultList isVerbose ((stepDescription, expression, _) : xs) successFlat = do
     let ignorePrintingStep = (displayReductionStep isVerbose stepDescription)
     if (ignorePrintingStep || null xs)

@@ -1,0 +1,33 @@
+The reason why some irreducable functions like "+" don't follow lazy evaluation (also possibly non-strict evaluation) in VisualizeReductions is coz GHC itself doesn't perform reductions at the CORE level and instead does it a lower level called STG
+We have to use strict behaviour here because we are trying to evaluate a function whose definition we do not know. therefor we cannot apply the arguments one after another but have to simplify all arguments before calling the function 
+
+Work:
+    Get the backend code ready
+    Either go with terminal UI and present examples in a nice doc or have a web frontend
+
+Implemented stuff:
+    Variable binding
+    Literals
+    Function application i.e operators too
+    Lambda expression
+    Case statements (look into these again)
+
+    Type classes ??
+
+Tasks
+    1. Add pretty printing
+    1.5 Remove "Apply unpackCString#"
+
+    CANCELLED 2. Add support for Float
+    3. Add support for Char, List and Tuple
+    4. Add Prelude.hs for ease of use
+        Necessary coz
+        -- Replace with matching pattern
+        (([] ++ [3]) ++ [2]) ++ [1]
+        -- No reduction rule implemented for this expression
+    5. Detect infinite recursion -> greater than 1000 or something
+    6. Change executable name
+
+    8. Examples for Demo
+
+    7. Find the right documentation for GHC API

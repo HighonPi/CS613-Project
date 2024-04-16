@@ -20,5 +20,5 @@ loop = forever $ do
 
 handleExceptions :: SomeException -> IO ()
 handleExceptions e = case fromException e of
-  Just UserInterrupt-> putStrLn "Haskell Reduction Visalizer tool Exiting..."
-  _                 -> putStrLn $ "Error occurred: " ++ show e
+  Just UserInterrupt-> putStrLn "Haskell Reduction Visalizer tool Exiting...\n"
+  _                 -> putStrLn $ "Error occurred: " ++ show e ++ "\n"
